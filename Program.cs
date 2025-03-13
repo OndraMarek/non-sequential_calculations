@@ -3,20 +3,20 @@
     static void Main()
     {
         int[] A = getUserInput();
-        int n = A.Length;
-        int[] S = new int[n];
-
-        ComputePrefixSums(A, S, n);
+        int[] S = ComputePrefixSums(A);
 
         printOutput(A, S);
     }
 
-    public static void ComputePrefixSums(int[] A, int[] S, int n)
+    public static int[] ComputePrefixSums(int[] A)
     {
+        int n = A.Length;
+        int[] S = new int[n];
+
         if (n == 1)
         {
             S[0] = A[0];
-            return;
+            return S;
         }
 
         int[] Y = new int[n / 2];
@@ -27,7 +27,7 @@
             Y[i] = A[2 * i] + A[2 * i + 1];
         });
 
-        ComputePrefixSums(Y, Z, n / 2);
+        Z = ComputePrefixSums(Y);
 
         S[0] = A[0];
         Parallel.For(1, n, i =>
@@ -41,6 +41,8 @@
                 S[i] = Z[i / 2];
             }
         });
+
+        return S;
     }
 
     private static int[] getUserInput()
