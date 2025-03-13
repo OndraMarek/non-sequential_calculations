@@ -6,6 +6,8 @@
         int[] S = ComputePrefixSums(A);
 
         printOutput(A, S);
+
+        exitOrContinue();
     }
 
     public static int[] ComputePrefixSums(int[] A)
@@ -75,5 +77,19 @@
         Console.WriteLine(string.Join(", ", A));
         Console.WriteLine("Prefix sums:");
         Console.WriteLine(string.Join(", ", S));
+    }
+
+    private static void exitOrContinue()
+    {
+        Console.WriteLine("Press 1 to continue or any other key to exit.");
+        ConsoleKeyInfo key = Console.ReadKey(true);
+        if (key.KeyChar == '1')
+        {
+            Main();
+        }
+        else
+        {
+            Environment.Exit(0);
+        }
     }
 }
