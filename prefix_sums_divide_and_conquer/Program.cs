@@ -2,18 +2,47 @@
 {
     static void Main()
     {
-        int[] A = getUserInput();
-        int[] S = ComputePrefixSumsDivideAndConquer(A);
+        int[] X = getUserInput();
+        int[] S = ComputePrefixSumsDivideAndConquer(X);
 
-        printOutput(A, S);
+        printOutput(X, S);
 
         exitOrContinue();
     }
 
-    public static int[] ComputePrefixSumsDivideAndConquer(int[] A)
+    public static int[] ComputePrefixSumsDivideAndConquer(int[] X)
     {
-        int n = A.Length;
+        int n = X.Length;
         int[] S = new int[n];
+
+        if(n == 1)
+        {
+            S[0] = X[0];
+            return S;
+        }
+
+        int[] Z1 = new int[n / 2];
+        int[] Z2 = new int[n / 2];
+
+        for (int i = 0; i < n / 2; i++)
+        {
+            Z1[i] = X[i];
+            Z2[i] = X[i + n / 2];
+        }
+
+        Parallel.Invoke(
+            () => { Z1 = ComputePrefixSumsDivideAndConquer(Z1); },
+            () => { Z2 = ComputePrefixSumsDivideAndConquer(Z2); }
+        );
+
+        Parallel.For(0, n / 2, i =>
+        {
+            S[i] = Z1[i];
+        });
+        Parallel.For(0, Z2.Length, i =>
+        {
+            S[n / 2 + i] = Z2[i] + Z1[Z1.Length - 1];
+        });
 
         return S;
     }
@@ -44,10 +73,13 @@
 
     private static void printOutput(int[] A, int[] S)
     {
+        Console.Clear();
+        Console.WriteLine("\n----------------------------");
         Console.WriteLine("Input array:");
         Console.WriteLine(string.Join(", ", A));
         Console.WriteLine("Prefix sums:");
         Console.WriteLine(string.Join(", ", S));
+        Console.WriteLine("----------------------------\n");
     }
 
     private static void exitOrContinue()
