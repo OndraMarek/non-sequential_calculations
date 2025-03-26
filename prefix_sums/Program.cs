@@ -73,10 +73,13 @@
 
     private static void printOutput(int[] A, int[] S)
     {
+        Console.Clear();
+        Console.WriteLine("\n----------------------------");
         Console.WriteLine("Input array:");
         Console.WriteLine(string.Join(", ", A));
         Console.WriteLine("Prefix sums:");
         Console.WriteLine(string.Join(", ", S));
+        Console.WriteLine("----------------------------\n");
     }
 
     private static void exitOrContinue()

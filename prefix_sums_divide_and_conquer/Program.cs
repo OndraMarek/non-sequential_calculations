@@ -1,6 +1,4 @@
-﻿using System.Security.Cryptography;
-
-class PrefixSumsDivideAndConquer
+﻿class PrefixSumsDivideAndConquer
 {
     static void Main()
     {
@@ -26,8 +24,14 @@ class PrefixSumsDivideAndConquer
         int[] Z1 = new int[n / 2];
         int[] Z2 = new int[n / 2];
 
-        Array.Copy(X, 0, Z1, 0, n/2);
-        Array.Copy(X, n / 2, Z2, 0, n / 2);
+        Parallel.For(0, n / 2, i =>
+        {
+            Z1[i] = X[i];
+        });
+        Parallel.For(0, n / 2, i =>
+        {
+            Z2[i] = X[n / 2 + i];
+        });
 
         Parallel.Invoke(
             () => { Z1 = ComputePrefixSumsDivideAndConquer(Z1); },
@@ -76,7 +80,7 @@ class PrefixSumsDivideAndConquer
         Console.WriteLine("\n----------------------------");
         Console.WriteLine("Input array:");
         Console.WriteLine(string.Join(", ", A));
-        Console.WriteLine("Prefix sums:");
+        Console.WriteLine("Prefix sums using divide and conquer:");
         Console.WriteLine(string.Join(", ", S));
         Console.WriteLine("----------------------------\n");
     }
