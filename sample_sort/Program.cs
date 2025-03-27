@@ -30,12 +30,51 @@ class SampleSort
         ExitOrContinue();
     }
 
+    public static int[] ComputePrefixSums(int[] A)
+    {
+        int n = A.Length;
+        int[] S = new int[n];
+
+        if (n == 1)
+        {
+            S[0] = A[0];
+            return S;
+        }
+
+        int[] Y = new int[n / 2];
+        int[] Z = new int[n / 2];
+
+        Parallel.For(0, n / 2, i =>
+        {
+            Y[i] = A[2 * i] + A[2 * i + 1];
+        });
+
+        Z = ComputePrefixSums(Y);
+
+        S[0] = A[0];
+        Parallel.For(1, n, i =>
+        {
+            if (i % 2 == 0)
+            {
+                S[i] = Z[i / 2 - 1] + A[i];
+            }
+            else
+            {
+                S[i] = Z[i / 2];
+            }
+        });
+
+        return S;
+    }
+
     public static int[] ComputeSampleSort(int[] A)
     {
         int n = 1024;
         int m = 15;
 
-        int[] S = new int[n];
+        int[] S = new int[m];
+
+        int[] output = new int[n];
 
         Random rand = new();
 
@@ -76,15 +115,21 @@ class SampleSort
             }
         });
 
-        Parallel.For(0,m, i =>
+        ImmutableSortedSet<int>[] sortedB = new ImmutableSortedSet<int>[m];
+        Parallel.For(0, m, i =>
         {
-            B[i].ToImmutableSortedSet();
+            sortedB[i] = B[i].ToImmutableSortedSet();
         });
 
-        //TODO - Catenate all sorted buckets into the final sorted array
+        int[] LengthB = new int[m];
+        for (int i = 0; i < m; i++)
+        {
+            LengthB[i] = sortedB[i].Count;
+        }
 
+        int[] PrefixSumsB = ComputePrefixSums(LengthB);
 
-        return [];
+        return output;
     }
 
     private static int[] GetUserInput()
