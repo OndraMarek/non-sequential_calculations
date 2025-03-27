@@ -5,29 +5,28 @@ class SampleSort
 {
     static void Main()
     {
-        int[] A = new int[1024];
-        Random rand = new();
-
-        for (int i = 0; i < 1024; i++)
-        {
-            A[i] = i;
-        }
-
-        for (int i = 1023; i > 0; i--)
-        {
-            int j = rand.Next(i + 1);
-
-            int temp = A[i];
-            A[i] = A[j];
-            A[j] = temp;
-        }
+        int[] A = GenerateNumbers(1024);
 
         int[] S = ComputeSampleSort(A);
 
         PrintOutput(A, S);
-        //PrintOutputToFile(A, S);
+        PrintOutputToFile(A, S);
 
         ExitOrContinue();
+    }
+
+    public static int[] GenerateNumbers(int n)
+    {
+        Random rand = new();
+
+        HashSet<int> uniqueNumbers = [];
+
+        while (uniqueNumbers.Count < n)
+        {
+            uniqueNumbers.Add(rand.Next(1, 10001));
+        }
+
+        return uniqueNumbers.ToArray();
     }
 
     public static int[] ComputePrefixSums(int[] A)
@@ -129,6 +128,18 @@ class SampleSort
 
         int[] PrefixSumsB = ComputePrefixSums(LengthB);
 
+        Parallel.For(0, m, i =>
+        {
+            int startIndex = (i == 0) ? 0 : PrefixSumsB[i - 1];
+            int count = PrefixSumsB[i] - startIndex;
+
+            Parallel.For(0, count, j =>
+            {
+                output[startIndex + j] = sortedB[i].ElementAt(j);
+            });
+
+        });
+
         return output;
     }
 
@@ -152,11 +163,11 @@ class SampleSort
 
     private static void PrintOutput(int[] A, int[] S)
     {
-        //Console.Clear();
+        Console.Clear();
         Console.WriteLine("\n----------------------------");
         Console.WriteLine("Input array:");
         Console.WriteLine(string.Join(", ", A));
-        Console.WriteLine("Sorted array using sample sort:");
+        Console.WriteLine("\nSorted array using sample sort:");
         Console.WriteLine(string.Join(", ", S));
         Console.WriteLine("----------------------------\n");
     }
@@ -176,10 +187,11 @@ class SampleSort
         }
 
         using StreamWriter writer = new(fileName);
+        Console.WriteLine($"Output written to file: {fileName}\n");
         writer.WriteLine("\n----------------------------");
         writer.WriteLine("Input array:");
         writer.WriteLine(string.Join(", ", A));
-        writer.WriteLine("Sorted array using sample sort:");
+        writer.WriteLine("\nSorted array using sample sort:");
         writer.WriteLine(string.Join(", ", S));
         writer.WriteLine("----------------------------\n");
     }
