@@ -1,4 +1,7 @@
-﻿class SampleSort
+﻿using System.Collections.Concurrent;
+using System.Collections.Immutable;
+
+class SampleSort
 {
     static void Main()
     {
@@ -22,13 +25,65 @@
         int[] S = ComputeSampleSort(A);
 
         PrintOutput(A, S);
-        PrintOutputToFile(A, S);
+        //PrintOutputToFile(A, S);
 
         ExitOrContinue();
     }
 
     public static int[] ComputeSampleSort(int[] A)
     {
+        int n = 1024;
+        int m = 15;
+
+        int[] S = new int[n];
+
+        Random rand = new();
+
+        for(int i = 0; i < m; i++)
+        {
+            int j = rand.Next(n);
+            S[i] = A[j];
+        }
+
+        Array.Sort(S);
+
+        ConcurrentBag<int>[] B = new ConcurrentBag<int>[m];
+        for (int i = 0; i < m; i++)
+        {
+            B[i] = [];
+        }
+
+        Parallel.For(0, n, i =>
+        {
+            if (A[i] < S[0])
+            {
+                B[0].Add(A[i]);
+            }
+            else if (A[i] >= S[m - 1])
+            {
+                B[m - 1].Add(A[i]);
+            }
+            else
+            {
+                for(int j = 0; j < m - 1; j++)
+                {
+                    if (A[i] >= S[j] && A[i] < S[j + 1])
+                    {
+                        B[j].Add(A[i]);
+                        break;
+                    }
+                }
+            }
+        });
+
+        Parallel.For(0,m, i =>
+        {
+            B[i].ToImmutableSortedSet();
+        });
+
+        //TODO - Catenate all sorted buckets into the final sorted array
+
+
         return [];
     }
 
@@ -52,7 +107,7 @@
 
     private static void PrintOutput(int[] A, int[] S)
     {
-        Console.Clear();
+        //Console.Clear();
         Console.WriteLine("\n----------------------------");
         Console.WriteLine("Input array:");
         Console.WriteLine(string.Join(", ", A));
@@ -63,16 +118,19 @@
 
     private static void PrintOutputToFile(int[] A, int[] S)
     {
-        int fileIndex = 1;
-        string fileName = "output.txt";
+        string projectRoot = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName;
 
+        string baseFileName = Path.Combine(projectRoot, "output");
+        string fileName = $"{baseFileName}.txt";
+
+        int fileIndex = 1;
         while (File.Exists(fileName))
         {
-            fileName = $"output{fileIndex}.txt";
+            fileName = $"{baseFileName}{fileIndex}.txt";
             fileIndex++;
         }
 
-        StreamWriter writer = new(fileName);
+        using StreamWriter writer = new(fileName);
         writer.WriteLine("\n----------------------------");
         writer.WriteLine("Input array:");
         writer.WriteLine(string.Join(", ", A));
