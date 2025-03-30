@@ -150,9 +150,8 @@ class SampleSort
 
     private static void PrintOutputToFile(int[] A, int[] S)
     {
-        string projectRoot = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName;
-
-        string baseFileName = Path.Combine(projectRoot, "output");
+        string currentDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        string baseFileName = Path.Combine(currentDirectory, "output");
         string fileName = $"{baseFileName}.txt";
 
         int fileIndex = 1;
