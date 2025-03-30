@@ -6,7 +6,6 @@ class SampleSort
     static void Main()
     {
         int[] A = GenerateNumbers(1024);
-
         int[] S = ComputeSampleSort(A);
 
         PrintOutput(A, S);
@@ -18,7 +17,6 @@ class SampleSort
     public static int[] GenerateNumbers(int n)
     {
         Random rand = new();
-
         HashSet<int> uniqueNumbers = [];
 
         while (uniqueNumbers.Count < n)
@@ -70,11 +68,8 @@ class SampleSort
     {
         int n = 1024;
         int m = 15;
-
         int[] S = new int[m];
-
         int[] output = new int[n];
-
         Random rand = new();
 
         for(int i = 0; i < m; i++)
@@ -103,14 +98,13 @@ class SampleSort
             }
             else
             {
-                for(int j = 0; j < m - 1; j++)
+                Parallel.For(0, m - 1, j =>
                 {
                     if (A[i] >= S[j] && A[i] < S[j + 1])
                     {
                         B[j].Add(A[i]);
-                        break;
                     }
-                }
+                });
             }
         });
 
@@ -130,35 +124,17 @@ class SampleSort
 
         Parallel.For(0, m, i =>
         {
-            int startIndex = (i == 0) ? 0 : PrefixSumsB[i - 1];
-            int count = PrefixSumsB[i] - startIndex;
+            int start = (i == 0) ? 0 : PrefixSumsB[i - 1];
+            int end = PrefixSumsB[i];
 
-            Parallel.For(0, count, j =>
+            Parallel.For(start, end, j =>
             {
-                output[startIndex + j] = sortedB[i].ElementAt(j);
+                output[j] = sortedB[i].ElementAt(j-start);
             });
 
         });
 
         return output;
-    }
-
-    private static int[] GetUserInput()
-    {
-        Console.WriteLine("Enter the elements separated by SPACES (number of elements must be a power of 2): ");
-        string[] input = Console.ReadLine().Split(' ');
-        int n = input.Length;
-
-        int[] A = new int[n];
-        for (int i = 0; i < n; i++)
-        {
-            if (!int.TryParse(input[i], out A[i]))
-            {
-                Console.WriteLine($"Invalid input '{input[i]}'. Please enter only integers.");
-                return GetUserInput();
-            }
-        }
-        return A;
     }
 
     private static void PrintOutput(int[] A, int[] S)
