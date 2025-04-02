@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34607.119
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "accelerated_cascading", "accelerated_cascading.csproj", "{F735F350-D74F-4190-BE35-DEC278EF717D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F735F350-D74F-4190-BE35-DEC278EF717D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F735F350-D74F-4190-BE35-DEC278EF717D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F735F350-D74F-4190-BE35-DEC278EF717D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F735F350-D74F-4190-BE35-DEC278EF717D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {05BCA850-3197-4425-A8E7-0A222EB65661}
+	EndGlobalSection
+EndGlobal
