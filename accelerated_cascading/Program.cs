@@ -7,7 +7,7 @@
         int S = ComputeAcceleratedCascadingMaximumProblem(B);
 
         PrintOutput(A, S);
-        //PrintOutputToFile(A, S);
+        PrintOutputToFile(A, S);
 
         ExitOrContinue();
     }
@@ -30,7 +30,7 @@
         int n = A.Length;
         int[] B = new int[n];
         int logn = (int)Math.Log2(n);
-        int loglogn = (int)Math.Ceiling(Math.Log2(logn));
+        int loglogn = (int)Math.Log2(logn);
 
         Parallel.For(0,n, i =>
         {
@@ -91,8 +91,23 @@
 
     public static int ComputeAcceleratedCascadingMaximumProblem(int[] A)
     {
+        int n = A.Length;
+        int logn = (int)Math.Log2(n);
+        int k = (int)Math.Log2(logn);
 
-        return 0;
+        for (int i = k - 1; i >= 0; i--)
+        {
+            int numBlocks = (int)Math.Pow(2, Math.Pow(2, k) - Math.Pow(2, k - i));
+            int blockSize = (int)Math.Pow(2, Math.Pow(2, k - i - 1));
+
+            Parallel.For(0, numBlocks, j =>
+            {
+                int blockStartIdx = j * blockSize;
+                A[j] = ConstantTimeMax(A[blockStartIdx..(blockStartIdx + blockSize)]);
+            });
+        }
+
+        return A[0];
     }
 
     private static void PrintOutput(int[] A, int S)
