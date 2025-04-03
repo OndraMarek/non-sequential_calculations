@@ -28,8 +28,9 @@ class SampleSort
         return uniqueNumbers.ToArray();
     }
 
-    public static int ParallelTreeMax(int[] A, int n)
+    public static int ParallelTreeMax(int[] A)
     {
+        int n = A.Length;
         int[] B = new int[n];
         Parallel.For(0,n, i =>
         {
@@ -48,11 +49,49 @@ class SampleSort
         return B[0];
     }
 
+    public static int ConstantTimeMax(int[] A)
+    {
+        int n = A.Length;
+        int[,] B = new int[n, n];
+        int[] M = new int[n];
+        int b = 0;
+
+        Parallel.For(0, n, i =>
+        {
+            Parallel.For(0, n, j =>
+            {
+                if (A[i] >= A[j])
+                    B[i, j] = 1;
+                else
+                    B[i, j] = 0;
+            });
+        });
+
+        Parallel.For(0, n, i =>
+        {
+            M[i] = 1;
+            Parallel.For(0, n, j =>
+            {
+                if (B[i, j] == 0) { 
+                    M[i] = 0;
+                }
+            });
+        });
+
+        Parallel.For(0, n, i =>
+        {
+            if (M[i] == 1)
+            {
+                b = A[i];
+            }
+        });
+
+        return b;
+    }
 
     public static int ComputeAcceleratedCascadingMaximumProblem(int[] A)
     {
-        int n = A.Length;
-        return ParallelTreeMax(A,n);
+        return 0;
     }
 
     private static void PrintOutput(int[] A, int S)
@@ -62,7 +101,8 @@ class SampleSort
         Console.WriteLine("Input array:");
         Console.WriteLine(string.Join(", ", A));
         Console.WriteLine("\nMax number from input using accelerated cascading:");
-        Console.WriteLine(S);
+        Console.WriteLine(ParallelTreeMax(A));
+        Console.WriteLine(ConstantTimeMax(A));
         Console.WriteLine("----------------------------\n");
     }
 
