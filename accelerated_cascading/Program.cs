@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 
 class SampleSort
@@ -27,10 +28,31 @@ class SampleSort
         return uniqueNumbers.ToArray();
     }
 
+    public static int ParallelTreeMax(int[] A, int n)
+    {
+        int[] B = new int[n];
+        Parallel.For(0,n, i =>
+        {
+            B[i] = A[i];
+        });
+
+        int logn = (int)Math.Log2(n);
+        for (int h = 0; h < logn; h++)
+        {
+            int step = n / (int)Math.Pow(2, h + 1);
+            Parallel.For(0, step, i =>
+            {
+                B[i] = Math.Max(B[2 * i], B[2 * i + 1]);
+            });
+        };
+        return B[0];
+    }
+
 
     public static int ComputeAcceleratedCascadingMaximumProblem(int[] A)
     {
-        return A.Max();
+        int n = A.Length;
+        return ParallelTreeMax(A,n);
     }
 
     private static void PrintOutput(int[] A, int S)
@@ -44,7 +66,7 @@ class SampleSort
         Console.WriteLine("----------------------------\n");
     }
 
-    private static void PrintOutputToFile(int[] A, int[] S)
+    private static void PrintOutputToFile(int[] A, int S)
     {
         string currentDirectory = AppDomain.CurrentDomain.BaseDirectory;
         string baseFileName = Path.Combine(currentDirectory, "output");
@@ -62,8 +84,8 @@ class SampleSort
         writer.WriteLine("\n----------------------------");
         writer.WriteLine("Input array:");
         writer.WriteLine(string.Join(", ", A));
-        writer.WriteLine("\nSorted array using sample sort:");
-        writer.WriteLine(string.Join(", ", S));
+        writer.WriteLine("\nMax number from input using accelerated cascading:");
+        writer.WriteLine(S);
         writer.WriteLine("----------------------------\n");
     }
 
