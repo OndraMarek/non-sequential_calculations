@@ -37,16 +37,16 @@
             B[i] = A[i];
         });
 
-        for (int h = 0; h < loglogn; h++)
+        for (int h = 1; h <= loglogn; h++)
         {
-            int step = n / (int)Math.Pow(2, h + 1);
+            int step = n / (int)Math.Pow(2, h);
             Parallel.For(0, step, i =>
             {
                 B[i] = Math.Max(B[2 * i], B[2 * i + 1]);
             });
             
         };
-        return B.Take(n/ loglogn).ToArray();
+        return B.Take(n/ (int)Math.Pow(2, loglogn)).ToArray();
     }
 
     public static int ConstantTimeMax(int[] A)
