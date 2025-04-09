@@ -46,7 +46,7 @@
             });
             
         };
-        return B.Take(n/ (int)Math.Pow(2, loglogn)).ToArray();
+        return B[0..(n / (int)Math.Pow(2, loglogn))];
     }
 
     public static int ConstantTimeMax(int[] A)
