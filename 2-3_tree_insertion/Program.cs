@@ -3,12 +3,11 @@
     // Třída Node obsahuje základní metody pro práci s uzelm 2-3 stromu
     class Node
     {
-        private List<Node> children;                      // privátní seznam potomků 
-        public Node parent { get; private set; }    // rodičovský uzel
+        List<Node> children;                        // privátní seznam potomků 
+        public Node parent { get; internal set; }    // rodičovský uzel
         public int key { get; private set; }        // max. klíč v podstromu tohoto uzlu
 
-        /* 
-        Neudržujeme hodnoty l,m,r přímo v uzlu.
+        /* Neudržujeme hodnoty l,m,r přímo v uzlu.
         Získáme je jako children[0].key, children[1].key, children[2].key
         */
 
@@ -38,10 +37,13 @@
         // Případnou výjimku neřešíme
         public void RemoveChild(int idx)
         {
-            children.RemoveAt(idx);
-            UpdateKey();
+            if (idx >= 0 && idx < children.Count)
+            {
+                children[idx].parent = null;
+                children.RemoveAt(idx);
+                UpdateKey();
+            }
         }
-
 
         // Přepočítá klíč, nutno volat vždy, když se něco změnilo u potomků 
         public void UpdateKey()
@@ -87,59 +89,160 @@
             return Search(node.Child(i), key);
         }
 
-
         // vloží do stromu nový list s klíčem key a případně strom vyváží
         // vrací false, pokud klíč už ve stromě je
-        public void Balance(Node parent)
-        {
-
-        }
-
         public bool Insert(int key)
         {
-            var leaf = Search(key);
-            if (leaf.key == key)
-                return false;
+            Node searchedLeafNode = Search(key);
+            if (searchedLeafNode.key == key && searchedLeafNode.isLeaf())
+            {
+                if (searchedLeafNode == root)
+                {
+                    if (!(root.key == int.MaxValue && root.NoOfChildren == 0))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
 
             var newLeaf = new Node(key);
 
             // Nový uzel se má přidat k rodiči nalezeného listu
             // Pokud nalezený list nemá rodiče, znamená to, že strom sestává pouze z kořene 
             // Pak tedy přidáváme nový uzel jako potomka kořene
-            var parent = leaf.parent ?? leaf;
+            Node parentNodeForNewLeaf;
 
             // Bude-li tuto metodu volat více vláken, musíte nyní zamknout . 
             // Pokud se to nepovede, čekáte na odemčení.
             // Pak ale musíte znovu získat , protože se mezitím mohl změnit!
             // Jiné vlákno mohlo vyvažovat  a přepojit  na jiného rodiče. 
             // Pokus o zamčení se tedy musí dělat v cyklu while - DOPLŇTE ZDE
+            while (true)
+            {
+                parentNodeForNewLeaf = searchedLeafNode.parent ?? searchedLeafNode;
 
-            parent.AddChild(newLeaf);
+                bool lockAcquired = false;
+                Monitor.TryEnter(parentNodeForNewLeaf, 50, ref lockAcquired);
 
-            // Metoda Balance postupuje stromem vzhůru a vyvažuje postupně vyšší uzly.
-            // Vyvažovaný uzel vždy zamkne (zámky jsou reentrantní) a pak odemkne. 
-            Balance(parent);
-            return true;
+                if (lockAcquired)
+                {
+                    try
+                    {
+                        if (parentNodeForNewLeaf == (searchedLeafNode.parent ?? searchedLeafNode))
+                        {
+                            parentNodeForNewLeaf.AddChild(newLeaf);
+                            // Metoda Balance postupuje stromem vzhůru a vyvažuje postupně vyšší uzly.
+                            // Vyvažovaný uzel vždy zamkne (zámky jsou reentrantní) a pak odemkne. 
+                            Balance(parentNodeForNewLeaf);
+                            return true;
+                        }
+                    }
+                    finally
+                    {
+                        Monitor.Exit(parentNodeForNewLeaf);
+                    }
+                }
+                Thread.Sleep(1);
+            }
         }
 
+        private void Balance(Node node)
+        {
+            if (node == null) return;
+
+            Node nodeToBalanceNext = null;
+            bool lockAcquired = false;
+
+            try
+            {
+                Monitor.Enter(node, ref lockAcquired);
+
+                if (node.NoOfChildren > 3)
+                {
+                    Node sibling = new Node(0);
+                    bool siblingLockAcquired = false;
+
+                    try
+                    {
+                        Monitor.Enter(sibling, ref siblingLockAcquired);
+
+                        List<Node> childrenToMove = new List<Node>();
+                        while (node.NoOfChildren > 2)
+                        {
+                            childrenToMove.Insert(0, node.Child(node.NoOfChildren - 1));
+                            node.RemoveChild(node.NoOfChildren - 1);
+                        }
+
+                        foreach (var child in childrenToMove)
+                        {
+                            sibling.AddChild(child);
+                        }
+
+                        Node parent = node.parent;
+                        if (parent == null)
+                        {
+                            var newRoot = new Node(0);
+                            newRoot.AddChild(node);
+                            newRoot.AddChild(sibling);
+                            this.root = newRoot;
+                            nodeToBalanceNext = null;
+                        }
+                        else
+                        {
+                            parent.AddChild(sibling);
+                            nodeToBalanceNext = parent;
+                        }
+                    }
+                    finally
+                    {
+                        if (siblingLockAcquired) Monitor.Exit(sibling);
+                    }
+                }
+                else
+                {
+                    node.UpdateKey();
+                    if (node.parent != null)
+                    {
+                        nodeToBalanceNext = node.parent;
+                    }
+                }
+            }
+            finally
+            {
+                if (lockAcquired) Monitor.Exit(node);
+            }
+
+            if (nodeToBalanceNext != null)
+            {
+                Balance(nodeToBalanceNext);
+            }
+        }
 
         // Metoda vrací textový výpis celého stromu v jednotlivých řádcích pod sebou
         public override string ToString()
         {
-            var level = new List<Node> { root };
+            List<Node> level = new List<Node> { root };
             var result = "";
             while (level.Any())
             {
-                var lowerLevel = new List<Node>();
+                List<Node> lowerLevel = new List<Node>();
                 // Nodes of different parents will be separated by |
-                var parent = level[0].parent;
-
-                foreach (var node in level)
+                Node parentOfFirstNodeInLevel = null;
+                if (level.Any())
                 {
-                    result += (node.parent == parent ? "" : "|  ")
-                      + (node.key == int.MaxValue ? "+N" : node.key.ToString())
-                      + " (" + node.NoOfChildren + ")  ";
-                    parent = node.parent;
+                    parentOfFirstNodeInLevel = level[0].parent;
+                }
+
+                foreach (Node node in level)
+                {
+                    result += (node.parent == parentOfFirstNodeInLevel ? "" : "|  ")
+                              + (node.key == int.MaxValue ? "+N" : node.key.ToString())
+                              + " (" + node.NoOfChildren + ")  ";
+                    parentOfFirstNodeInLevel = node.parent;
                     for (int i = 0; i < node.NoOfChildren; i++)
                         lowerLevel.Add(node.Child(i));
                 }
@@ -148,6 +251,26 @@
             }
             return result;
         }
-
     }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Tree23 tree = new Tree23();
+            int[] A = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+            int[] B = [15, 25, 35, 45, 55, 65, 75, 85, 95, 105];
+
+            foreach (int i in A)
+            {
+                tree.Insert(i);
+            }
+
+            Parallel.ForEach(B, i =>
+            {
+                tree.Insert(i);
+            });
+            Console.WriteLine(tree.ToString());
+        }
+    }   
 }
