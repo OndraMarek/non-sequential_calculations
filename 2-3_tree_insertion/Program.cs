@@ -93,28 +93,18 @@
         // vrací false, pokud klíč už ve stromě je
         public bool Insert(int key)
         {
-            Node searchedLeafNode = Search(key);
-            if (searchedLeafNode.key == key && searchedLeafNode.isLeaf())
+            Node leaf = Search(key);
+            if (leaf.key == key && leaf.isLeaf())
             {
-                if (searchedLeafNode == root)
-                {
-                    if (!(root.key == int.MaxValue && root.NoOfChildren == 0))
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
+                if (leaf != root || (root.key != int.MaxValue || root.NoOfChildren != 0))
                     return false;
-                }
             }
 
-            var newLeaf = new Node(key);
+            Node newLeaf = new(key);
 
             // Nový uzel se má přidat k rodiči nalezeného listu
             // Pokud nalezený list nemá rodiče, znamená to, že strom sestává pouze z kořene 
             // Pak tedy přidáváme nový uzel jako potomka kořene
-            Node parentNodeForNewLeaf;
 
             // Bude-li tuto metodu volat více vláken, musíte nyní zamknout . 
             // Pokud se to nepovede, čekáte na odemčení.
@@ -123,27 +113,24 @@
             // Pokus o zamčení se tedy musí dělat v cyklu while - DOPLŇTE ZDE
             while (true)
             {
-                parentNodeForNewLeaf = searchedLeafNode.parent ?? searchedLeafNode;
+                Node parent = leaf.parent ?? leaf;
 
-                bool lockAcquired = false;
-                Monitor.TryEnter(parentNodeForNewLeaf, 50, ref lockAcquired);
-
-                if (lockAcquired)
+                if (Monitor.TryEnter(parent, 50))
                 {
                     try
                     {
-                        if (parentNodeForNewLeaf == (searchedLeafNode.parent ?? searchedLeafNode))
+                        if (parent == (leaf.parent ?? leaf))
                         {
-                            parentNodeForNewLeaf.AddChild(newLeaf);
+                            parent.AddChild(newLeaf);
                             // Metoda Balance postupuje stromem vzhůru a vyvažuje postupně vyšší uzly.
                             // Vyvažovaný uzel vždy zamkne (zámky jsou reentrantní) a pak odemkne. 
-                            Balance(parentNodeForNewLeaf);
+                            Balance(parent);
                             return true;
                         }
                     }
                     finally
                     {
-                        Monitor.Exit(parentNodeForNewLeaf);
+                        Monitor.Exit(parent);
                     }
                 }
                 Thread.Sleep(1);
@@ -163,14 +150,14 @@
 
                 if (node.NoOfChildren > 3)
                 {
-                    Node sibling = new Node(0);
+                    Node sibling = new(0);
                     bool siblingLockAcquired = false;
 
                     try
                     {
                         Monitor.Enter(sibling, ref siblingLockAcquired);
 
-                        List<Node> childrenToMove = new List<Node>();
+                        List<Node> childrenToMove = [];
                         while (node.NoOfChildren > 2)
                         {
                             childrenToMove.Insert(0, node.Child(node.NoOfChildren - 1));
@@ -226,7 +213,7 @@
         public override string ToString()
         {
             List<Node> level = new List<Node> { root };
-            var result = "";
+            string result = "";
             while (level.Any())
             {
                 List<Node> lowerLevel = new List<Node>();
@@ -257,7 +244,7 @@
     {
         static void Main(string[] args)
         {
-            Tree23 tree = new Tree23();
+            Tree23 tree = new();
             int[] A = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
             int[] B = [15, 25, 35, 45, 55, 65, 75, 85, 95, 105];
 
