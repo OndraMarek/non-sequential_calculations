@@ -96,8 +96,7 @@
             Node leaf = Search(key);
             if (leaf.key == key && leaf.isLeaf())
             {
-                if (leaf != root || (root.key != int.MaxValue || root.NoOfChildren != 0))
-                    return false;
+                return false;
             }
 
             Node newLeaf = new(key);
@@ -133,7 +132,6 @@
                         Monitor.Exit(parent);
                     }
                 }
-                Thread.Sleep(1);
             }
         }
 
@@ -141,60 +139,38 @@
         {
             if (node == null) return;
 
-            Node nodeToBalanceNext = null;
             bool lockAcquired = false;
-
+            Monitor.Enter(node, ref lockAcquired);
             try
             {
-                Monitor.Enter(node, ref lockAcquired);
-
-                if (node.NoOfChildren > 3)
+                if (node.NoOfChildren <= 3)
                 {
-                    Node sibling = new(0);
-                    bool siblingLockAcquired = false;
-
-                    try
-                    {
-                        Monitor.Enter(sibling, ref siblingLockAcquired);
-
-                        List<Node> childrenToMove = [];
-                        while (node.NoOfChildren > 2)
-                        {
-                            childrenToMove.Insert(0, node.Child(node.NoOfChildren - 1));
-                            node.RemoveChild(node.NoOfChildren - 1);
-                        }
-
-                        foreach (var child in childrenToMove)
-                        {
-                            sibling.AddChild(child);
-                        }
-
-                        Node parent = node.parent;
-                        if (parent == null)
-                        {
-                            var newRoot = new Node(0);
-                            newRoot.AddChild(node);
-                            newRoot.AddChild(sibling);
-                            this.root = newRoot;
-                            nodeToBalanceNext = null;
-                        }
-                        else
-                        {
-                            parent.AddChild(sibling);
-                            nodeToBalanceNext = parent;
-                        }
-                    }
-                    finally
-                    {
-                        if (siblingLockAcquired) Monitor.Exit(sibling);
-                    }
+                    node.UpdateKey();
                 }
                 else
                 {
-                    node.UpdateKey();
-                    if (node.parent != null)
+                    Node sibling = new(0);
+                    int middle = node.NoOfChildren / 2;
+                    for (int i = node.NoOfChildren - 1; i >= middle; i--)
                     {
-                        nodeToBalanceNext = node.parent;
+                        Node child = node.Child(i);
+                        node.RemoveChild(i);
+                        sibling.AddChild(child);
+                    }
+                    sibling.UpdateKey();
+                    node.UpdateKey();
+
+                    Node parent = node.parent;
+                    if (parent == null)
+                    {
+                        Node newRoot = new(sibling.Child(0).key);
+                        newRoot.AddChild(node);
+                        newRoot.AddChild(sibling);
+                        root = newRoot;
+                    }
+                    else
+                    {
+                        parent.AddChild(sibling);
                     }
                 }
             }
@@ -203,10 +179,7 @@
                 if (lockAcquired) Monitor.Exit(node);
             }
 
-            if (nodeToBalanceNext != null)
-            {
-                Balance(nodeToBalanceNext);
-            }
+            Balance(node.parent);
         }
 
         // Metoda vrací textový výpis celého stromu v jednotlivých řádcích pod sebou
